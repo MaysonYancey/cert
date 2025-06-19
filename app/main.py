@@ -6,6 +6,7 @@ import subprocess
 import time
 import requests
 from pathlib import Path
+from dotenv import load_dotenv
 
 # Configure root logger to output debug information to stdout so that
 # `docker-compose logs` will display detailed activity from this service.
@@ -14,9 +15,37 @@ logger = logging.getLogger(__name__)
 
 app = Flask(__name__, static_folder='static')
 
+# Load environment variables from a .env file if present so that the
+# Cloudflare token saved via the UI can be used without restarting the
+# container.
+load_dotenv()
+
 @app.route('/')
 def index():
     return send_from_directory(app.static_folder, 'index.html')
+
+
+@app.route('/token', methods=['POST'])
+def save_token():
+    """Persist the submitted Cloudflare API token to the `.env` file."""
+    data = request.get_json() or {}
+    token = data.get('token')
+    if not token:
+        return jsonify({'status': 'error', 'message': 'Token missing'}), 400
+
+    # Ensure previous contents are preserved except for the token line.
+    env_path = Path('.env')
+    lines = []
+    if env_path.exists():
+        for line in env_path.read_text().splitlines():
+            if not line.startswith('CLOUDFLARE_API_TOKEN='):
+                lines.append(line)
+    lines.append(f'CLOUDFLARE_API_TOKEN={token}')
+    env_path.write_text('\n'.join(lines) + '\n')
+
+    # Reload environment so subsequent requests use the new token.
+    load_dotenv(override=True)
+    return jsonify({'status': 'ok'})
 
 
 @app.route('/submit', methods=['POST'])

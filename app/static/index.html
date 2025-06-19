@@ -1,9 +1,122 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Welcome</title>
+    <meta charset="UTF-8">
+    <title>Service Registration</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            justify-content: center;
+            padding: 40px;
+            background-color: #f7f7f7;
+        }
+        .container {
+            background: #fff;
+            padding: 20px 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            max-width: 400px;
+            width: 100%;
+        }
+        label {
+            display: block;
+            margin-top: 15px;
+        }
+        input {
+            width: 100%;
+            padding: 8px;
+            margin-top: 5px;
+            box-sizing: border-box;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+        button {
+            margin-top: 20px;
+            padding: 10px;
+            width: 100%;
+            border: none;
+            background-color: #007bff;
+            color: #fff;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        #confirm {
+            display: none;
+            margin-top: 20px;
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background-color: #fafafa;
+        }
+        pre {
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+    </style>
 </head>
 <body>
-    <h1>Hello from Flask in Docker!</h1>
+    <div class="container">
+        <h1>Register Service</h1>
+        <label>Name of service:
+            <input type="text" id="service" />
+        </label>
+        <label>IP address:
+            <input type="text" id="ip" />
+        </label>
+        <label>Port:
+            <input type="text" id="port" />
+        </label>
+        <button id="submitBtn">Submit</button>
+        <div id="confirm">
+            <p>Please confirm the information:</p>
+            <pre id="summary"></pre>
+            <button id="finalSubmit">Confirm</button>
+        </div>
+        <p id="result"></p>
+    </div>
+    <script>
+        const submitBtn = document.getElementById('submitBtn');
+        const finalSubmit = document.getElementById('finalSubmit');
+        const confirmDiv = document.getElementById('confirm');
+        const summary = document.getElementById('summary');
+        const result = document.getElementById('result');
+
+        function collectData() {
+            return {
+                service: document.getElementById('service').value,
+                ip: document.getElementById('ip').value,
+                port: document.getElementById('port').value
+            };
+        }
+
+        submitBtn.addEventListener('click', () => {
+            const data = collectData();
+            summary.textContent = JSON.stringify(data, null, 2);
+            confirmDiv.style.display = 'block';
+        });
+
+        finalSubmit.addEventListener('click', async () => {
+            const data = collectData();
+            try {
+                const response = await fetch('/submit', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(data)
+                });
+                if (response.ok) {
+                    result.textContent = 'Submitted successfully';
+                    confirmDiv.style.display = 'none';
+                } else {
+                    result.textContent = 'Submission failed';
+                }
+            } catch (err) {
+                result.textContent = 'Submission failed';
+            }
+        });
+    </script>
 </body>
 </html>
